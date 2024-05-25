@@ -1,9 +1,6 @@
-type Operator = '<=' | '>=' | '=';
+import Monomial from './Monomial';
 
-interface Monomial {
-    coefficient: number;
-    variable: string;
-};
+type Operator = '<=' | '>=' | '=';
 
 interface Restriction {
     lhs: Monomial[];
