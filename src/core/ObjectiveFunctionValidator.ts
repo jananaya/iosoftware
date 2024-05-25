@@ -1,8 +1,12 @@
 class ObjectiveFunctionValidator {
     static validate(objectiveFunction: string): boolean {
-        const pattern = /^(max|min)\s+[a-zA-Z]\s*=\s*(([+-]?\d*\.?\d*[a-zA-Z]\d+)(\s*[+-]\s*\d*\.?\d*[a-zA-Z]\d+)*)$/;
+        // Eliminar todos los espacios y luego trim para quitar espacios al principio y al final
+        const cleanedObjectiveFunction = objectiveFunction.replace(/\s+/g, '').trim();
 
-        return pattern.test(objectiveFunction.trim());
+        // Patrón para validar la función objetivo
+        const pattern = /^(max|min)\w=(([+-]?\d*\.?\d*\w\d+)([+-]\d*\.?\d*\w\d+)*)$/;
+
+        return pattern.test(cleanedObjectiveFunction);
     }
 }
 
