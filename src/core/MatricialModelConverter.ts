@@ -16,57 +16,66 @@ class MatricialModelConverter {
             restrictionConstants: []
         };
 
-        model.costVector = objectiveFunction.rhs.map(monomial => monomial.coefficient);
-
         const variables = new Set<string>();
-        let restrictionIndex = 0;
 
         objectiveFunction.rhs.forEach(monomial => variables.add(`${this.VariablePrefix}${monomial.variable}`));
+
+        let restrictionIndex = 0;
 
         for (const restriction of restrictions) {
             model.restrictionConstants.push(restriction.rhs);
 
             if (restriction.operator === '=') {
-                continue;
-            }
-
-            variables.add(`${this.SlackVariablePrefix}${restrictionIndex + 1}`);
-
-            if (restriction.operator === '<=') {
-                model.costVector.push(0);
-            }
-
-            if (restriction.operator === '>=') {
                 variables.add(`${this.SurplusVariablePrefix}${restrictionIndex + 1}`);
-
-                model.costVector.push(-this.LongNumber);
+            } else if (restriction.operator === '<=') {
+                variables.add(`${this.SlackVariablePrefix}${restrictionIndex + 1}`);
+            } else if (restriction.operator === '>=') {
+                variables.add(`${this.SlackVariablePrefix}${restrictionIndex + 1}`);
+                variables.add(`${this.SurplusVariablePrefix}${restrictionIndex + 1}`);
             }
 
             restrictionIndex += 1;
         }
 
-        model.variableVector = Array.from(variables);
-        restrictionIndex = 0;
+        const commonVariables = Array.from(variables).filter(v => v.startsWith(this.VariablePrefix)).sort();
+        const slackVariables = Array.from(variables).filter(v => v.startsWith(this.SlackVariablePrefix)).sort();
+        const surplusVariables = Array.from(variables).filter(v => v.startsWith(this.SurplusVariablePrefix)).sort();
 
+        model.variableVector = commonVariables.concat(slackVariables, surplusVariables);
+
+        model.costVector = model.variableVector.map(variable => {
+            const commonVariable = objectiveFunction.rhs.find(monomial => `${this.VariablePrefix}${monomial.variable}` === variable);
+            if (commonVariable) {
+                return commonVariable.coefficient;
+            }
+            if (variable.startsWith(this.SlackVariablePrefix)) {
+                return 0;
+            }
+            if (variable.startsWith(this.SurplusVariablePrefix)) {
+                return -this.LongNumber;
+            }
+            return 0;
+        });
+
+        restrictionIndex = 0;
         for (const restriction of restrictions) {
             const row: number[] = [];
 
             for (const variable of model.variableVector) {
-                const isSlackVariable = variable === `${this.SlackVariablePrefix}${restrictionIndex + 1}`;
-                const isSurplusVariable = variable === `${this.SurplusVariablePrefix}${restrictionIndex + 1}`;
-
-                if (isSlackVariable && restriction.operator === '>=') {
-                    row.push(-1);
-                    continue;
-                }
-
-                if (isSlackVariable || isSurplusVariable) {
+                if (variable === `${this.SlackVariablePrefix}${restrictionIndex + 1}`) {
+                    if (restriction.operator === '>=') {
+                        row.push(-1);
+                    } else if (restriction.operator === '<=') {
+                        row.push(1);
+                    } else {
+                        row.push(0);
+                    }
+                } else if (variable === `${this.SurplusVariablePrefix}${restrictionIndex + 1}`) {
                     row.push(1);
-                    continue;
+                } else {
+                    const monomial = restriction.lhs.find(monomial => `${this.VariablePrefix}${monomial.variable}` === variable);
+                    row.push(monomial ? monomial.coefficient : 0);
                 }
-
-                const monomial = restriction.lhs.find(monomial => `${this.VariablePrefix}${monomial.variable}` === variable);
-                row.push(monomial ? monomial.coefficient : 0);
             }
 
             model.coefficentMatrix.push(row);
