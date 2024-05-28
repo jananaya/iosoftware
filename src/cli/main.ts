@@ -1,22 +1,61 @@
-import MatricialModelConverter from '../core/MatricialModelConverter';
-import ObjectiveFunction from '../core/ObjectiveFunction';
+import * as readline from 'readline';
 import ObjectiveFunctionParser from '../core/ObjectiveFunctionParser';
-import Restriction from '../core/Restriction';
-import RestrictionParser from '../core/RestrictionParser';
+import RestrictionValidator from '../core/RestrictionValidator';
+import MatricialModelConverter from '../core/MatricialModelConverter';
+import RestrictionParser from "../core/RestrictionParser";
+import ObjectiveFunctionNormalizer from "../core/ObjetiveFunctionNormalizer";
+import ObjectiveFunctionValidator from "../core/ObjectiveFunctionValidator";
 
-const restrictionsStr: string[] = [
-    '2x1 + x2 <= 20',
-    'x1 + x2 <= 18',
-    'x1 + 2x2 >= 12'
-];
-const objectiveFunctionStr: string = 'max z = 5x1 + 4x2';
+const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout
+});
 
-const restrictions: Restriction[] = restrictionsStr.map((restrictionStr: string) =>
-    RestrictionParser.parse(restrictionStr));
+function getInput(prompt: string): Promise<string> {
+    return new Promise((resolve) => {
+        rl.question(prompt, (answer) => {
+            resolve(answer);
+        });
+    });
+}
 
-const objectiveFunction: ObjectiveFunction = ObjectiveFunctionParser
-    .parse(objectiveFunctionStr) as ObjectiveFunction;
+async function main() {
+    let objectiveFunction = await getInput("Ingrese la función objetivo: ");
+    while (!ObjectiveFunctionValidator.validate(objectiveFunction)){
+        console.log("La función objetivo ingresada no es válida. Por favor, inténtelo de nuevo.");
+        objectiveFunction = await getInput("Ingrese la función objetivo: ");
+    }
+    let objectiveFunctionObj = ObjectiveFunctionParser.parse(objectiveFunction);
+    while (!objectiveFunctionObj) {
+        console.log("La función objetivo ingresada no es válida. Por favor, inténtelo de nuevo.");
+        objectiveFunction = await getInput("Ingrese la función objetivo: ");
+        objectiveFunctionObj = ObjectiveFunctionParser.parse(objectiveFunction);
+    }
 
-const model = MatricialModelConverter.convert(objectiveFunction, restrictions);
+    objectiveFunctionObj = ObjectiveFunctionNormalizer.normalize(objectiveFunctionObj);
 
-console.log(model);
+    let restrictions = [];
+    let restriction = await getInput("Ingrese una restricción (o 'fin' para terminar): ");
+    while (restriction.toLowerCase() !== 'fin') {
+        if (RestrictionValidator.validate(restriction, objectiveFunctionObj.variables)) {
+            restrictions.push(RestrictionParser.parse(restriction));
+        } else {
+            console.log("La restricción ingresada no es válida. Por favor, inténtelo de nuevo.");
+        }
+        restriction = await getInput("Ingrese una restricción (o 'fin' para terminar): ");
+    }
+
+    const matricialModel = MatricialModelConverter.convert(objectiveFunctionObj, restrictions);
+
+    console.log("Vector de costos:", matricialModel.costVector);
+    console.log("Matriz de coeficientes:");
+    matricialModel.coefficentMatrix.forEach(row => {
+        console.log(row.join(' '));
+    });
+    console.log("Vector de variables:", matricialModel.variableVector);
+    console.log("Constantes de restricciones:", matricialModel.restrictionConstants);
+
+    rl.close();
+}
+
+main().catch(err => console.error(err));

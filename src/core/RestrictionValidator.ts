@@ -16,7 +16,8 @@ class RestrictionValidator {
         const operator = operatorMatch[0];
         const [lhs, rhs] = cleanedRestriction.split(operator).map(part => part.trim());
 
-        if (isNaN(Number(rhs))) {
+        const rhsNumber = Number(rhs);
+        if (isNaN(rhsNumber) || rhsNumber < 0) {
             return false;
         }
 
