@@ -6,84 +6,106 @@ class MatricialModelConverter {
     private static readonly VariablePrefix = 'x';
     private static readonly SlackVariablePrefix = 's';
     private static readonly SurplusVariablePrefix = 'u';
-    private static readonly LongNumber = 500;
+    static readonly LongNumber = 500;
 
     static convert(objectiveFunction: ObjectiveFunction, restrictions: Restriction[]): MatricialModel {
-        const model: MatricialModel = {
-            costVector: [],
-            coefficentMatrix: [],
-            variableVector: [],
-            restrictionConstants: []
-        };
+		const model: MatricialModel = {
+			costVector: [],
+			coefficentMatrix: [],
+			variableVector: [],
+			restrictionConstants: []
+		};
 
-        const variables = new Set<string>();
+		model.restrictionConstants = restrictions.map(restriction => restriction.rhs);
+		model.variableVector = this.getVariableVector(objectiveFunction, restrictions);
+		model.costVector = this.getCostVector(objectiveFunction, model.variableVector);
+		model.coefficentMatrix = this.getCoefficentMatrix(restrictions, model.variableVector);
 
-        objectiveFunction.rhs.forEach(monomial => variables.add(`${this.VariablePrefix}${monomial.variable}`));
-
-        let restrictionIndex = 0;
-
-        for (const restriction of restrictions) {
-            model.restrictionConstants.push(restriction.rhs);
-
-            if (restriction.operator === '=') {
-                variables.add(`${this.SurplusVariablePrefix}${restrictionIndex + 1}`);
-            } else if (restriction.operator === '<=') {
-                variables.add(`${this.SlackVariablePrefix}${restrictionIndex + 1}`);
-            } else if (restriction.operator === '>=') {
-                variables.add(`${this.SlackVariablePrefix}${restrictionIndex + 1}`);
-                variables.add(`${this.SurplusVariablePrefix}${restrictionIndex + 1}`);
-            }
-
-            restrictionIndex += 1;
-        }
-
-        const commonVariables = Array.from(variables).filter(v => v.startsWith(this.VariablePrefix)).sort();
-        const slackVariables = Array.from(variables).filter(v => v.startsWith(this.SlackVariablePrefix)).sort();
-        const surplusVariables = Array.from(variables).filter(v => v.startsWith(this.SurplusVariablePrefix)).sort();
-
-        model.variableVector = commonVariables.concat(slackVariables, surplusVariables);
-
-        model.costVector = model.variableVector.map(variable => {
-            const commonVariable = objectiveFunction.rhs.find(monomial => `${this.VariablePrefix}${monomial.variable}` === variable);
-            if (commonVariable) {
-                return commonVariable.coefficient;
-            }
-            if (variable.startsWith(this.SlackVariablePrefix)) {
-                return 0;
-            }
-            if (variable.startsWith(this.SurplusVariablePrefix)) {
-                return -this.LongNumber;
-            }
-            return 0;
-        });
-
-        restrictionIndex = 0;
-        for (const restriction of restrictions) {
-            const row: number[] = [];
-
-            for (const variable of model.variableVector) {
-                if (variable === `${this.SlackVariablePrefix}${restrictionIndex + 1}`) {
-                    if (restriction.operator === '>=') {
-                        row.push(-1);
-                    } else if (restriction.operator === '<=') {
-                        row.push(1);
-                    } else {
-                        row.push(0);
-                    }
-                } else if (variable === `${this.SurplusVariablePrefix}${restrictionIndex + 1}`) {
-                    row.push(1);
-                } else {
-                    const monomial = restriction.lhs.find(monomial => `${this.VariablePrefix}${monomial.variable}` === variable);
-                    row.push(monomial ? monomial.coefficient : 0);
-                }
-            }
-
-            model.coefficentMatrix.push(row);
-            restrictionIndex += 1;
-        }
-
-        return model;
+		return model;
     }
+
+	private static getVariableVector(objectiveFunction: ObjectiveFunction, restrictions: Restriction[]): string[] {
+		const variables = new Set<string>();
+
+		objectiveFunction.rhs.forEach(monomial => variables.add(`${this.VariablePrefix}${monomial.variable}`));
+		let restrictionIndex = 0;
+
+		for (const restriction of restrictions) {
+			const surplusVariable = `${this.SurplusVariablePrefix}${restrictionIndex + 1}`;
+			const operatorVariables = {
+				'<=': [`${this.SlackVariablePrefix}${restrictionIndex + 1}`],
+				'>=': [`${this.SlackVariablePrefix}${restrictionIndex + 1}`, surplusVariable],
+				'=': [surplusVariable]
+			};
+
+			operatorVariables[restriction.operator].forEach(variable => variables.add(variable));
+			restrictionIndex += 1;
+		}
+
+		const variablesArray = Array.from(variables);
+		const commonVariables = variablesArray
+			.filter(v => v.startsWith(this.VariablePrefix))
+			.sort();
+		const slackVariables = variablesArray
+			.filter(v => v.startsWith(this.SlackVariablePrefix))
+			.sort();
+		const surplusVariables = variablesArray
+			.filter(v => v.startsWith(this.SurplusVariablePrefix))
+			.sort();
+
+		return commonVariables.concat(slackVariables, surplusVariables);
+	}
+
+	private static getCostVector(objectiveFunction: ObjectiveFunction, variables: string[]): number[] {
+		return variables.map(variable => {
+			const commonVariable = objectiveFunction.rhs.find(monomial => `${this.VariablePrefix}${monomial.variable}` === variable);
+			if (commonVariable) {
+				return commonVariable.coefficient;
+			}
+			if (variable.startsWith(this.SlackVariablePrefix)) {
+				return 0;
+			}
+			if (variable.startsWith(this.SurplusVariablePrefix)) {
+				return -this.LongNumber;
+			}
+			return 0;
+		});
+	}
+
+	private static getCoefficentMatrix(restrictions: Restriction[], variableVector: string[]): number[][] {
+		const matrix: number[][] = [];
+
+		let restrictionIndex = 0;
+		for (const restriction of restrictions) {
+			const row: number[] = [];
+
+			for (const variable of variableVector) {
+				const surplusVariable = `${this.SurplusVariablePrefix}${restrictionIndex + 1}`;
+				const slackVariable = `${this.SlackVariablePrefix}${restrictionIndex + 1}`;
+
+				switch (variable) {
+					case slackVariable:
+						const operatorCoeficients = { '<=': 1, '>=': -1, '=': 0 };
+						row.push(operatorCoeficients[restriction.operator]);
+						break;
+
+					case surplusVariable:
+						row.push(1);
+						break;
+
+					default:
+						const monomial = restriction.lhs.find(monomial => `${this.VariablePrefix}${monomial.variable}` === variable);
+						row.push(monomial ? monomial.coefficient : 0);
+						break;
+				}
+			}
+
+			matrix.push(row);
+			restrictionIndex += 1;
+		}
+
+		return matrix;
+	}
 }
 
 export default MatricialModelConverter;
