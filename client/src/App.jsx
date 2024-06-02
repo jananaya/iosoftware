@@ -18,20 +18,30 @@ function App() {
         return InputCleaner.clean(input);
     };
 
+    const handleObjectiveFunctionInput = async () => {
+        try {
+            const input = prompt("Ingrese la función objetivo:");
+            if (input !== null) {
+                const cleanedObjectiveFunction = cleanInput(input);
+                setObjectiveFunction(cleanedObjectiveFunction);
+            }
+        } catch (error) {
+            console.error("Error al procesar los datos:", error);
+        }
+    };
+
     const handleSubmit = async (event) => {
         event.preventDefault();
 
         try {
-            let cleanedObjectiveFunction = objectiveFunction;
-            console.log("Cleaned Objective Function:", cleanedObjectiveFunction); // Debugging line
+            console.log("Función Objetivo:", objectiveFunction);
 
-            if (!ObjectiveFunctionValidator.validate(cleanedObjectiveFunction)) {
+            if (!ObjectiveFunctionValidator.validate(objectiveFunction)) {
                 setErrorMessage("La función objetivo ingresada no es válida. Por favor, inténtelo de nuevo.");
                 return;
             }
 
-            let objectiveFunctionObj = ObjectiveFunctionParser.parse(cleanedObjectiveFunction);
-            console.log("Parsed Objective Function:", objectiveFunctionObj); // Debugging line
+            let objectiveFunctionObj = ObjectiveFunctionParser.parse(objectiveFunction);
             if (!objectiveFunctionObj) {
                 setErrorMessage("Error al parsear la función objetivo. Por favor, inténtelo de nuevo.");
                 return;
@@ -39,9 +49,9 @@ function App() {
 
             objectiveFunctionObj = ObjectiveFunctionMaximizer.maximize(objectiveFunctionObj);
 
-            let parsedRestrictions = [];
+            const parsedRestrictions = [];
             for (let restr of restrictions) {
-                let cleanedRestriction = cleanInput(restr);
+                const cleanedRestriction = cleanInput(restr);
                 if (RestrictionValidator.validate(cleanedRestriction, objectiveFunctionObj)) {
                     parsedRestrictions.push(RestrictionParser.parse(cleanedRestriction));
                 } else {
@@ -79,6 +89,7 @@ function App() {
     return (
         <div>
             <h1>Generador de Modelos Matriciales</h1>
+            <button onClick={handleObjectiveFunctionInput}>Ingresar Función Objetivo</button>
             <form onSubmit={handleSubmit}>
                 <label>Función Objetivo:</label>
                 <input type="text" value={objectiveFunction} onChange={(e) => setObjectiveFunction(e.target.value)} />

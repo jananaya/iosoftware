@@ -1,8 +1,10 @@
 class ObjectiveFunctionValidator {
     static validate(objectiveFunction: string): boolean {
+        const cleanedObjectiveFunction = objectiveFunction.replace(/\s+/g, '').trim();
+
         const pattern = /^(max|min)\w=(([+-]?\d*\.?\d*\w\d+)([+-]\d*\.?\d*\w\d+)*)$/;
-        const cleanObjectiveFunction = objectiveFunction.replace(/\s+/g, '').trim();
-        return pattern.test(cleanObjectiveFunction);
+
+        return pattern.test(cleanedObjectiveFunction);
     }
 }
 
