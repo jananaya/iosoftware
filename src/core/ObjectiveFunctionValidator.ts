@@ -1,9 +1,9 @@
-class ObjectiveFunctionValidator {
-    static validate(objectiveFunction: string): boolean {
-        const pattern = /^(max|min)\s+[a-zA-Z]\s*=\s*(([+-]?\d*\.?\d*[a-zA-Z]\d+)(\s*[+-]\s*\d*\.?\d*[a-zA-Z]\d+)*)$/;
+    class ObjectiveFunctionValidator {
+        static validate(objectiveFunction: string): boolean {
+            const pattern = /^(max|min)\w=(([+-]?\d*\.?\d*\w\d+)([+-]\d*\.?\d*\w\d+)*)$/;
 
-        return pattern.test(objectiveFunction.trim());
+            return pattern.test(objectiveFunction);
+        }
     }
-}
 
-export default ObjectiveFunctionValidator;
+    export default ObjectiveFunctionValidator;
