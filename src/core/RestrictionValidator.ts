@@ -1,20 +1,23 @@
+import ObjectiveFunction from "./ObjectiveFunction";
+
 class RestrictionValidator {
-    static validate(restriction: string, objectiveVariables: string[]): boolean {
-        const cleanedRestriction = restriction.replace(/\s+/g, '').trim();
-
+    static validate(restriction: string, objectiveFunction: ObjectiveFunction): boolean {
         const overallPattern = /^([+-]?\d*\w\d+([+-]\d*\w\d+)*)([<>=]=?)[+-]?\d+$/;
+        let objectiveVariables = new Array<string>();
+        objectiveFunction.rhs.forEach(monomial => objectiveVariables.push(`${'x'}${monomial.variable}`));
 
-        if (!overallPattern.test(cleanedRestriction)) {
+
+        if (!overallPattern.test(restriction)) {
             return false;
         }
 
-        const operatorMatch = cleanedRestriction.match(/<=|>=|=/);
+        const operatorMatch = restriction.match(/<=|>=|=/);
         if (!operatorMatch) {
             return false;
         }
 
         const operator = operatorMatch[0];
-        const [lhs, rhs] = cleanedRestriction.split(operator).map(part => part.trim());
+        const [lhs, rhs] = restriction.split(operator).map(part => part.trim());
 
         const rhsNumber = Number(rhs);
         if (isNaN(rhsNumber) || rhsNumber < 0) {
@@ -29,6 +32,7 @@ class RestrictionValidator {
 
         while ((match = termPattern.exec(lhs)) !== null) {
             const variable = match[2];
+
 
             if (!objectiveVariables.includes(variable)) {
                 return false;
