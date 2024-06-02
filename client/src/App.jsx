@@ -1,41 +1,79 @@
 import React, { useState } from 'react';
 import './App.css';
+import MatricialModelConverter from './core/MatricialModelConverter';
+import InputCleaner from './core/InputCleaner';
+import ObjectiveFunctionValidator from './core/ObjectiveFunctionValidator';
+import ObjectiveFunctionParser from './core/ObjectiveFunctionParser';
+import ObjectiveFunctionMaximizer from './core/ObjectiveFunctionMaximizer';
+import RestrictionValidator from './core/RestrictionValidator';
+import RestrictionParser from './core/RestrictionParser';
 
 function App() {
     const [objectiveFunction, setObjectiveFunction] = useState("");
     const [restrictionInput, setRestrictionInput] = useState("");
     const [restrictions, setRestrictions] = useState([]);
-    const [matricialModel, setMatricialModel] = useState(null);
+    const [errorMessage, setErrorMessage] = useState("");
+
+    const cleanInput = (input) => {
+        return InputCleaner.clean(input);
+    };
 
     const handleSubmit = async (event) => {
         event.preventDefault();
 
         try {
-            const response = await fetch('/api/generarModelo', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    objectiveFunction: objectiveFunction,
-                    restrictions: restrictions
-                }),
-            });
+            let cleanedObjectiveFunction = objectiveFunction;
+            console.log("Cleaned Objective Function:", cleanedObjectiveFunction); // Debugging line
 
-            if (!response.ok) {
-                throw new Error('Error al obtener el modelo matricial');
+            if (!ObjectiveFunctionValidator.validate(cleanedObjectiveFunction)) {
+                setErrorMessage("La función objetivo ingresada no es válida. Por favor, inténtelo de nuevo.");
+                return;
             }
 
-            const model = await response.json();
-            setMatricialModel(model);
+            let objectiveFunctionObj = ObjectiveFunctionParser.parse(cleanedObjectiveFunction);
+            console.log("Parsed Objective Function:", objectiveFunctionObj); // Debugging line
+            if (!objectiveFunctionObj) {
+                setErrorMessage("Error al parsear la función objetivo. Por favor, inténtelo de nuevo.");
+                return;
+            }
+
+            objectiveFunctionObj = ObjectiveFunctionMaximizer.maximize(objectiveFunctionObj);
+
+            let parsedRestrictions = [];
+            for (let restr of restrictions) {
+                let cleanedRestriction = cleanInput(restr);
+                if (RestrictionValidator.validate(cleanedRestriction, objectiveFunctionObj)) {
+                    parsedRestrictions.push(RestrictionParser.parse(cleanedRestriction));
+                } else {
+                    setErrorMessage("Una de las restricciones ingresadas no es válida. Por favor, inténtelo de nuevo.");
+                    return;
+                }
+            }
+
+            const model = MatricialModelConverter.convert(objectiveFunctionObj, parsedRestrictions);
+
+            setErrorMessage(""); // Limpia cualquier mensaje de error anterior
+
+            console.log("Vector de costos:", model.costVector);
+            console.log("Matriz de coeficientes:");
+            model.coefficentMatrix.forEach(row => {
+                console.log(row.join(' '));
+            });
+            console.log("Vector de variables:", model.variableVector);
+            console.log("Constantes de restricciones:", model.restrictionConstants);
+
         } catch (error) {
-            console.error("Error al obtener el modelo matricial:", error);
+            setErrorMessage("Error al procesar los datos: " + error.message);
+            console.error("Error al procesar los datos:", error);
         }
     };
 
     const handleAddRestriction = () => {
-        setRestrictions([...restrictions, restrictionInput]);
-        setRestrictionInput("");
+        const cleanedInput = cleanInput(restrictionInput);
+        if (cleanedInput) {
+            setRestrictions([...restrictions, cleanedInput]);
+            setRestrictionInput("");
+        }
     };
 
     return (
@@ -44,20 +82,14 @@ function App() {
             <form onSubmit={handleSubmit}>
                 <label>Función Objetivo:</label>
                 <input type="text" value={objectiveFunction} onChange={(e) => setObjectiveFunction(e.target.value)} />
-                
+
                 <h2>Restricciones:</h2>
                 <input type="text" value={restrictionInput} onChange={(e) => setRestrictionInput(e.target.value)} />
                 <button type="button" onClick={handleAddRestriction}>Agregar Restricción</button>
-                
+
                 <button type="submit">Generar Modelo</button>
             </form>
-
-            {matricialModel && (
-                <div>
-                    <h2>Modelo Generado:</h2>
-                    <pre>{JSON.stringify(matricialModel, null, 2)}</pre>
-                </div>
-            )}
+            {errorMessage && <p style={{color: 'red'}}>{errorMessage}</p>}
         </div>
     );
 }
