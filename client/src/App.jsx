@@ -1,16 +1,17 @@
 import React, { useState } from 'react';
 import './App.css';
-import MatricialModelConverter from './core/MatricialModelConverter';
-import InputCleaner from './core/InputCleaner';
-import ObjectiveFunctionValidator from './core/ObjectiveFunctionValidator';
-import ObjectiveFunctionParser from './core/ObjectiveFunctionParser';
-import ObjectiveFunctionMaximizer from './core/ObjectiveFunctionMaximizer';
-import RestrictionValidator from './core/RestrictionValidator';
-import RestrictionParser from './core/RestrictionParser';
+import MatricialModelConverter from './core/dist/core/MatricialModelConverter';
+import InputCleaner from './core/dist/core/InputCleaner';
+import ObjectiveFunctionValidator from './core/dist/core/ObjectiveFunctionValidator';
+import ObjectiveFunctionParser from './core/dist/core/ObjectiveFunctionParser';
+import ObjectiveFunctionMaximizer from './core/dist/core/ObjectiveFunctionMaximizer';
+import RestrictionValidator from './core/dist/core/RestrictionValidator';
+import RestrictionParser from './core/dist/core/RestrictionParser';
+
+
 
 function App() {
     const [objectiveFunction, setObjectiveFunction] = useState("");
-    const [realof, setof] = useState("");
     const [restrictionInput, setRestrictionInput] = useState("");
     const [restrictions, setRestrictions] = useState([]);
     const [errorMessage, setErrorMessage] = useState("");
@@ -19,32 +20,18 @@ function App() {
         return InputCleaner.clean(input);
     };
 
-    const handleObjectiveFunctionInput = async () => {
-        try {
-            const input = prompt("Ingrese la función objetivo:");
-            if (input !== null) {
-                setof(input)
-                setObjectiveFunction(cleanInput(input));
-            }
-        } catch (error) {
-            console.error("Error al procesar los datos:", error);
-        }
-    };
-
     const handleSubmit = async (event) => {
         event.preventDefault();
 
         try {
-            console.log("Función Objetivo:", objectiveFunction);
-            let valid = ObjectiveFunctionValidator.validate(objectiveFunction);
-            console.log(valid)
+            let valid = ObjectiveFunctionValidator.validate(cleanInput(objectiveFunction));
 
             if (!valid) {
                 setErrorMessage("La función objetivo ingresada no es válida. Por favor, inténtelo de nuevo.");
                 return;
             }
 
-            let objectiveFunctionObj = ObjectiveFunctionParser.parse(realof);
+            let objectiveFunctionObj = ObjectiveFunctionParser.parse(objectiveFunction);
             if (!objectiveFunctionObj) {
                 setErrorMessage("Error al parsear la función objetivo. Por favor, inténtelo de nuevo.");
                 return;
@@ -92,10 +79,13 @@ function App() {
     return (
         <div>
             <h1>Generador de Modelos Matriciales</h1>
-            <button onClick={handleObjectiveFunctionInput}>Ingresar Función Objetivo</button>
             <form onSubmit={handleSubmit}>
                 <label>Función Objetivo:</label>
-                <input type="text" value={objectiveFunction} onChange={(e) => setObjectiveFunction(e.target.value)} />
+                <input
+                    type="text"
+                    value={objectiveFunction}
+                    onChange={(e) => setObjectiveFunction(e.target.value)}
+                />
 
                 <h2>Restricciones:</h2>
                 <input type="text" value={restrictionInput} onChange={(e) => setRestrictionInput(e.target.value)} />
@@ -103,7 +93,7 @@ function App() {
 
                 <button type="submit">Generar Modelo</button>
             </form>
-            {errorMessage && <p style={{color: 'red'}}>{errorMessage}</p>}
+            {errorMessage && <p style={{ color: 'red' }}>{errorMessage}</p>}
         </div>
     );
 }

@@ -3,7 +3,7 @@ import PolynomialParser from './PolynomialParser';
 
 class ObjectiveFunctionParser {
     static parse(objectiveFunction: string): ObjectiveFunction | null {
-        const pattern = /^(max|min)\s*[a-zA-Z]\s*=\s*([+-]?\s*\d*\.?\d*\s*[a-zA-Z]\d*(\s*[+-]\s*\d*\.?\d*\s*[a-zA-Z]\d*)*)$/;
+        const pattern = /^(max|min)\s+[a-zA-Z]\s*=\s*([+-]?\s*\d*\.?\d*[a-zA-Z]\d+(\s*[+-]\s*\d*\.?\d*[a-zA-Z]\d+)*)$/;
         const match = objectiveFunction.match(pattern);
 
         if (!match) {
@@ -11,9 +11,10 @@ class ObjectiveFunctionParser {
         }
 
         const operator: ObjectiveFunction['operator'] = match[1] as ObjectiveFunction['operator'];
-        const rhs = PolynomialParser.parse(match[2]);
+        const rhs: ObjectiveFunction['rhs'] = PolynomialParser.parse(match[2]);
         const variables = match[0].match(/[a-zA-Z]\d+/g) || [];
-
+        console.log("variables parseano");
+        console.log(match[0]);
         return { operator, rhs, variables };
     }
 }

@@ -3,12 +3,12 @@ import ObjectiveFunction from './ObjectiveFunction';
 import Restriction from './Restriction';
 
 class MatricialModelConverter {
-    private static readonly VariablePrefix = 'x';
-    private static readonly SlackVariablePrefix = 's';
-    private static readonly SurplusVariablePrefix = 'u';
-    static readonly LongNumber = 500;
+	private static readonly VariablePrefix = 'x';
+	private static readonly SlackVariablePrefix = 's';
+	private static readonly SurplusVariablePrefix = 'u';
+	static readonly LongNumber = 500;
 
-    static convert(objectiveFunction: ObjectiveFunction, restrictions: Restriction[]): MatricialModel {
+	static convert(objectiveFunction: ObjectiveFunction, restrictions: Restriction[]): MatricialModel {
 		const model: MatricialModel = {
 			costVector: [],
 			coefficentMatrix: [],
@@ -22,7 +22,7 @@ class MatricialModelConverter {
 		model.coefficentMatrix = this.getCoefficentMatrix(restrictions, model.variableVector);
 
 		return model;
-    }
+	}
 
 	private static getVariableVector(objectiveFunction: ObjectiveFunction, restrictions: Restriction[]): string[] {
 		const variables = new Set<string>();

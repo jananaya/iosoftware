@@ -3,10 +3,9 @@ import ObjectiveFunction from "./ObjectiveFunction";
 class RestrictionValidator {
     static validate(restriction: string, objectiveFunction: ObjectiveFunction): boolean {
         const overallPattern = /^([+-]?\d*\w\d+([+-]\d*\w\d+)*)([<>=]=?)[+-]?\d+$/;
-        let objectiveVariables = new Array<string>();
-        objectiveFunction.rhs.forEach(monomial => objectiveVariables.push(`${'x'}${monomial.variable}`));
+        let objectiveVariables = objectiveFunction.variables;
 
-
+        console.log(objectiveVariables);
         if (!overallPattern.test(restriction)) {
             return false;
         }
@@ -32,7 +31,6 @@ class RestrictionValidator {
 
         while ((match = termPattern.exec(lhs)) !== null) {
             const variable = match[2];
-
 
             if (!objectiveVariables.includes(variable)) {
                 return false;

@@ -1,8 +1,8 @@
 class InputCleaner {
-    static clean(input: string) {
-        // Solo eliminar espacios innecesarios antes y después del string
-        return input.trim();
+    static clean(input: String){
+        return input.replace(/\s+/g, '').trim();
     }
+
 }
 
 export default InputCleaner;
