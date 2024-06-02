@@ -11,6 +11,7 @@ class ObjectiveFunctionNormalizer {
             return {
                 rhs: normalizedRhs,
                 operator: 'max',
+                variables: objectiveFunction.variables
             };
         }
 

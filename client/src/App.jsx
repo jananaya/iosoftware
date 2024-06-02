@@ -10,6 +10,7 @@ import RestrictionParser from './core/RestrictionParser';
 
 function App() {
     const [objectiveFunction, setObjectiveFunction] = useState("");
+    const [realof, setof] = useState("");
     const [restrictionInput, setRestrictionInput] = useState("");
     const [restrictions, setRestrictions] = useState([]);
     const [errorMessage, setErrorMessage] = useState("");
@@ -22,8 +23,8 @@ function App() {
         try {
             const input = prompt("Ingrese la función objetivo:");
             if (input !== null) {
-                const cleanedObjectiveFunction = cleanInput(input);
-                setObjectiveFunction(cleanedObjectiveFunction);
+                setof(input)
+                setObjectiveFunction(cleanInput(input));
             }
         } catch (error) {
             console.error("Error al procesar los datos:", error);
@@ -35,19 +36,21 @@ function App() {
 
         try {
             console.log("Función Objetivo:", objectiveFunction);
+            let valid = ObjectiveFunctionValidator.validate(objectiveFunction);
+            console.log(valid)
 
-            if (!ObjectiveFunctionValidator.validate(objectiveFunction)) {
+            if (!valid) {
                 setErrorMessage("La función objetivo ingresada no es válida. Por favor, inténtelo de nuevo.");
                 return;
             }
 
-            let objectiveFunctionObj = ObjectiveFunctionParser.parse(objectiveFunction);
+            let objectiveFunctionObj = ObjectiveFunctionParser.parse(realof);
             if (!objectiveFunctionObj) {
                 setErrorMessage("Error al parsear la función objetivo. Por favor, inténtelo de nuevo.");
                 return;
             }
 
-            objectiveFunctionObj = ObjectiveFunctionMaximizer.maximize(objectiveFunctionObj);
+            objectiveFunctionObj = ObjectiveFunctionMaximizer.normalize(objectiveFunctionObj);
 
             const parsedRestrictions = [];
             for (let restr of restrictions) {

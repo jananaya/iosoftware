@@ -1,9 +1,11 @@
-    class ObjectiveFunctionValidator {
-        static validate(objectiveFunction: string): boolean {
-            const pattern = /^(max|min)\w=(([+-]?\d*\.?\d*\w\d+)([+-]\d*\.?\d*\w\d+)*)$/;
-            const cleanObjectiveFunction = objectiveFunction.replace(/\s+/g, '').trim();
-            return pattern.test(cleanObjectiveFunction);
-        }
-    }
+class ObjectiveFunctionValidator {
+    static validate(objectiveFunction: string): boolean {
+        const cleanedObjectiveFunction = objectiveFunction.replace(/\s+/g, '').trim();
 
-    export default ObjectiveFunctionValidator;
+        const pattern = /^(max|min)\w=(([+-]?\d*\.?\d*\w\d+)([+-]\d*\.?\d*\w\d+)*)$/;
+
+        return pattern.test(cleanedObjectiveFunction);
+    }
+}
+
+export default ObjectiveFunctionValidator;

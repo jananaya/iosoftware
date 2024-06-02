@@ -21,14 +21,15 @@ function getInput(prompt: string): Promise<string> {
 }
 
 async function main() {
-    let objectiveFunction = InputCleaner.clean(await getInput("Ingrese la función objetivo: "));
+    let objectiveFunction = await getInput("Ingrese la función objetivo: ");
     while (!ObjectiveFunctionValidator.validate(objectiveFunction)){
         console.log("La función objetivo ingresada no es válida. Por favor, inténtelo de nuevo.");
-        objectiveFunction = InputCleaner.clean(await getInput("Ingrese la función objetivo: "));
+        objectiveFunction = await getInput("Ingrese la función objetivo: ");
     }
+    console.log(objectiveFunction)
     let objectiveFunctionObj = ObjectiveFunctionParser.parse(objectiveFunction);
     while (!objectiveFunctionObj) {
-        console.log("La función objetivo ingresada no es válida. Por favor, inténtelo de nuevo.");
+        console.log("La función objetivo ingresada no fue parseada. Por favor, inténtelo de nuevo.");
         objectiveFunction = await getInput("Ingrese la función objetivo: ");
         objectiveFunctionObj = ObjectiveFunctionParser.parse(objectiveFunction);
     }

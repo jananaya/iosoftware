@@ -12,8 +12,9 @@ class ObjectiveFunctionParser {
 
         const operator: ObjectiveFunction['operator'] = match[1] as ObjectiveFunction['operator'];
         const rhs: ObjectiveFunction['rhs'] = PolynomialParser.parse(match[2]);
+        const variables = match[0].match(/[a-zA-Z]\d+/g) || [];
 
-        return { operator, rhs};
+        return { operator, rhs, variables };
     }
 }
 
