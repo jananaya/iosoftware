@@ -4,8 +4,9 @@ type Operator = '<=' | '>=' | '=';
 
 interface Restriction {
     lhs: Monomial[];
-    rhs: number;
     operator: Operator;
-};
+    rhs: number;
+
+}
 
 export default Restriction;

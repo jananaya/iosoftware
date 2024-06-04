@@ -10,8 +10,8 @@ class RestrictionParser {
 
         return {
             lhs: lhsMonomials,
-            rhs: parseFloat(rhs),
-            operator: operator as Restriction['operator']
+            operator: operator as Restriction['operator'],
+            rhs: parseFloat(rhs)
         };       
     }
 }

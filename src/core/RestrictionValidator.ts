@@ -5,7 +5,6 @@ class RestrictionValidator {
         const overallPattern = /^([+-]?\d*\w\d+([+-]\d*\w\d+)*)([<>=]=?)[+-]?\d+$/;
         let objectiveVariables = objectiveFunction.variables;
 
-        console.log(objectiveVariables);
         if (!overallPattern.test(restriction)) {
             return false;
         }
