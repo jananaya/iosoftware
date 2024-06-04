@@ -71,6 +71,18 @@ class VectorCalculate {
 
         return  index;
     }
+    static productoPunto(vector1: number[], vector2: number[]): number {
+        if (vector1.length !== vector2.length) {
+            throw new Error("Los vectores deben tener la misma longitud");
+        }
+
+        let producto = 0;
+        for (let i = 0; i < vector1.length; i++) {
+            producto += vector1[i] * vector2[i];
+        }
+
+        return producto;
+    }
 }
 
 export default VectorCalculate;

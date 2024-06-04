@@ -7,10 +7,10 @@ import vectorCalculate from "./VectorCalculate";
 import ColumnToVectorConvert from "./ColumnToVectorConvert";
 import VariableUpdater from "./VariableUpdater";
 import ColumnUpdater from "./ColumnUpdater";
-
+import SimplexIterationResult from "../core/SimplexIteration";
 
 class SimplexSolve{
-    static solve(matrixCoefficent: number[][], costVector: number[], restrictionConst: number[], variableVector: string[], identityMatrix: number[][], identityCoefficents: number[], identityVariables: string[]) :void{
+    static solve(matrixCoefficent: number[][], costVector: number[], restrictionConst: number[], variableVector: string[], identityMatrix: number[][], identityCoefficents: number[], identityVariables: string[]) :SimplexIterationResult[]{
         let isNegative = true;
         let i = 1;
         let B_1A: number[][];
@@ -21,152 +21,97 @@ class SimplexSolve{
         let columnVec: number[];
         let teta: number[];
         let minIndexPositive: number;
-        let exit: string;
-        let enter: string;
+        let exit: string = '';
+        let enter: string = '';
+        let modelSolution: number;
         let inverseIndentityMatrix: number[][];
+        let iterationResult: SimplexIterationResult[] = [];
 
         do{
+            //Calculo de la matrix inversa
             inverseIndentityMatrix = MatrixCalculate.calculeInverse(identityMatrix);
 
-            console.log("Matriz Identidad inversa:");
-            inverseIndentityMatrix.forEach(row => {
-                console.log(row.join(' '));
-            });
-            console.log("")
-            console.log("")
-
-            console.log("A impresa:");
-            matrixCoefficent.forEach(row => {
-                console.log(row.join(' '));
-            });
-            console.log("")
-            console.log("")
-
+            //Calculo de B^1 * A
             B_1A = MatrixCalculate.multiply(inverseIndentityMatrix, matrixCoefficent);
-            console.log("------- Todo el calculo de r ------")
-            console.log("B-1 * A")
-            B_1A.forEach(row => {
-                console.log(row.join(' '));
-            });
-
-            interface IterationData {
-                iteration: number;
-                modelSolution: number;
-                solutionVariables: string[];
-                reducedCostVector: number[];
-                variableToEnter: string;
-                variableToExit: string;
-            }
-
             let identityCoefficentsConvert = Convert.toMatrix(identityCoefficents, 1, identityCoefficents.length);
+
+            //Calculo de C_b * B^1 * A
             C_bB_1A =  convert.toVector(MatrixCalculate.multiply(identityCoefficentsConvert, B_1A));
+
+           //Calculo de r (C_b * B^1 * A - C^t)
             r = VectorCalculate.subtract(C_bB_1A, costVector);
-            console.log("");
-            console.log("");
-
-            console.log("Calculo C_bB_1A");
-            console.log(C_bB_1A);
-
-            console.log("");
-            console.log("");
-
-            console.log("Calculo de r");
-            console.log(r)
-
-            console.log("");
-            console.log("");
-
-
             let restConstConvert = convert.toMatrix(restrictionConst, restrictionConst.length, 1);
+
+            //Calculo de B_inversa * b (vector de costos reducidos)
             B_inverse_b = convert.toVector(MatrixCalculate.multiply(inverseIndentityMatrix, restConstConvert));
 
-            console.log("constante de restricciones");
-            console.log(restConstConvert);
-
-
-            console.log("");
-            console.log("");
-
-
-            console.log("Calculo de B^-1 * b");
-            console.log(B_inverse_b);
-
+            //Index que se saca para saber cual variable entra
             minIndexColumn = VectorCalculate.findMinNegativeValueAndIndex(r).index;
+
+            modelSolution = VectorCalculate.productoPunto(identityCoefficents, B_inverse_b);
+
+            //Si no se encuentra con ningun numero negativo termina el proceso
             isNegative = vectorCalculate.findMinNegativeValueAndIndex(r).foundNegative;
 
-            console.log("");
-            console.log("");
 
-            console.log("Index minimo de r " + minIndexColumn);
-            console.log("es negativo: " + isNegative);
-
-            console.log("");
-            console.log("");
+            console.log("Tamaño del arreglo: " + iterationResult.length);
             if (!isNegative){
-                break;
+                iterationResult.push({
+                    iteration: i,
+                    modelSolution,
+                    solutionVariables: identityVariables,
+                    reducedCostVector: identityCoefficents,
+                    variableToEnter: enter,
+                    variableToExit: exit,
+                });
+                return iterationResult;
             }
 
+            //Saca la columna que se usara para el calculo de teta
             columnVec = ColumnToVectorConvert.convertColumnToVector(B_1A, minIndexColumn);
 
-            console.log("Vector que sale de A");
-            console.log(columnVec);
-
-            console.log("");
-            console.log("");
-
+            //calculo de teta (B:inversa * b / B:inversa * Aj (columnVec))
             teta = VectorCalculate.divide(B_inverse_b, columnVec);
 
-            console.log("Calculo de teta");
-            console.log(teta);
-
-            console.log("");
-            console.log("");
-
+            //Index que se saca de teta para saber cual variable sale
             minIndexPositive = VectorCalculate.findMinPositiveValueAndIndex(teta);
 
-            console.log("Index minimo que sale de teta " + minIndexPositive);
-
-            console.log("");
-            console.log("");
-
             let modelChange = VariableUpdater.updateVariables(minIndexPositive, minIndexColumn, variableVector, identityVariables, costVector, identityCoefficents);
+
+            //Variable que sale
             exit = modelChange.variableToExit;
+
+            //Variable que entra
             enter = modelChange.variableToEnter;
+
+            //Vector que representa las variables
             identityVariables = modelChange.identityVariables;
-            identityCoefficents = modelChange.identityRestrictionConstants;
 
-            console.log("Variable que sale " + exit);
-            console.log("Variable que entra " + enter);
-
-            console.log("");
-            console.log("");
-
-            console.log("Variables de identidad");
+            console.log("Matriz de variables: ");
             console.log(identityVariables);
 
-            console.log("");
-            console.log("");
-
-            console.log("Coeficientes de identidad");
+            //Matrix que representa C:transpuesta_b
+            identityCoefficents = modelChange.identityRestrictionConstants;
+            console.log("coeficientes: ");
             console.log(identityCoefficents);
 
-            console.log("");
-            console.log("");
+            let IV = identityVariables;
+            let IC = identityCoefficents;
 
-
-            identityMatrix = ColumnUpdater.updateColumn(identityMatrix, minIndexColumn, minIndexPositive, matrixCoefficent);
-
-            console.log("Matriz identidad actualizada: ");
-            identityMatrix.forEach(row => {
-                console.log(row.join(' '));
+            iterationResult.push({
+                iteration: i,
+                modelSolution,
+                solutionVariables: IV,
+                reducedCostVector: IC,
+                variableToEnter: enter,
+                variableToExit: exit,
             });
 
+            //Matrix que representa B para la siguiente iteracion
+            identityMatrix = ColumnUpdater.updateColumn(identityMatrix, minIndexColumn, minIndexPositive, matrixCoefficent);
             i = i + 1;
-            console.log("");
-            console.log("");
         }while (isNegative);
-
-        console.log("--- Finish ---")
+        return iterationResult;
     }
 }
 
